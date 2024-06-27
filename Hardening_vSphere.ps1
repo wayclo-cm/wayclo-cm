@@ -135,7 +135,7 @@ foreach ($host in $resultadosPorHost.Keys) {
             <th>Valor Actual</th>
             <th>Estado</th>
         </tr>
-    "@
+    "
     foreach ($resultado in $resultadosPorHost[$host]) {
         $estadoClase = ""
         switch ($resultado.Status) {
