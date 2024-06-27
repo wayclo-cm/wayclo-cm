@@ -119,10 +119,10 @@ $html = @"
     </style>
 </head>
 <body>
-    <div style="text-align:center;">
-        <img src="$logoWayclo" alt="Wayclo" style="height: 100px;"/>
+    <div style='text-align:center;'>
+        <img src='$logoWayclo' alt='Wayclo' style='height: 100px;'/>
     </div>
-    <h1 style="text-align:center;">Control de configuraciones en los hosts</h1>
+    <h1 style='text-align:center;'>Control de configuraciones en los hosts</h1>
 "@
 
 foreach ($host in $resultadosPorHost.Keys) {
@@ -150,7 +150,7 @@ foreach ($host in $resultadosPorHost.Keys) {
             <td>$($resultado.CurrentValue)</td>
             <td>$($resultado.Status)</td>
         </tr>
-        "@
+        "
     }
     $html += "</table>"
 }
@@ -158,7 +158,7 @@ foreach ($host in $resultadosPorHost.Keys) {
 $html += @"
 </body>
 </html>
-"@
+"
 
 # Guardar el contenido HTML en un archivo
 $outputFilePath = "C:\Scripts\$outputFileName.html"
