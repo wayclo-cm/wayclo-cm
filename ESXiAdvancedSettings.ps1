@@ -2,7 +2,7 @@
 Import-Module VMware.PowerCLI
 
 # Variables de conexión
-$vCenterServer = "172.30.6.71"
+$vCenterServer = "vcenter"
 $user = "tu_usuario"
 $password = "tu_contraseña"
 
