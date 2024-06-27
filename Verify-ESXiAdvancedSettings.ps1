@@ -15,44 +15,45 @@ Connect-VIServer -Server $vCenterServer -Credential $credential
 $settings = @{
     "Config.HostAgent.plugins.hostsvc.esxAdminsGroupAutoAdd" = $false;
     "Config.HostAgent.plugins.vimsvc.authValidateInterval" = 90;
-    “Security.AccountUnlockTime” = 900;
-    “Security.AccountLockFailures” = 5;
-    “Security.PasswordHistory” = 5;
-    “Syslog.global.logDir” = "Site Specific";
-    “Syslog.global.logHost” = "Site Specific";
-    “Net.BlockGuestBPDU” = 1;
-    “UserVars.ESXiShellInteractiveTimeOut” = 900;
-    “UserVars.ESXiShellTimeOut” = 600;
-    “Security.PasswordQualityControl” = "retry=3 min=disabled,15,15,15,15 max=64 similar=deny passphrase=3";
-    “UserVars.SuppressHyperthreadWarning” = 0;
-    “UserVars.DcuiTimeOut” = 600;
-    “Config.HostAgent.plugins.solo.enableMob” = $false;
-    “DCUI.Access” = "root";
-    “Config.HostAgent.log.level” = "info";
-    “Net.DVFilterBindIpAddress” = "N/A";
-    “UserVars.SuppressShellWarning” = 0;
-    “UserVars.ESXiVPsDisabledProtocols” = "sslv3,tlsv1,tlsv1.1";
-    “Mem.ShareForceSalting” = 2;
-    “Syslog.global.auditRecord.storageEnable” = $true;
-    “Syslog.global.auditRecord.storageCapacity” = 100;
-    “Syslog.global.auditRecord.storageDirectory” = "Site Specific";
-    “Syslog.global.auditRecord.remoteEnable” = true;
-    “Syslog.global.logLevel” = "info";
-    “Syslog.global.certificate.strictX509Compliance” = $true;
-    “Mem.MemEagerZero” = 1;
-    “Net.BMCNetworkEnable” = 0;
-    “ConfigManager.HostAccessManager.LockdownMode” = "normal";
+    "Security.AccountUnlockTime" = 900;
+    "Security.AccountLockFailures" = 5;
+    "Security.PasswordHistory" = 5;
+    "Syslog.global.logDir" = "Site Specific";
+    "Syslog.global.logHost" = "Site Specific";
+    "Net.BlockGuestBPDU" = 1;
+    "UserVars.ESXiShellInteractiveTimeOut" = 900;
+    "UserVars.ESXiShellTimeOut" = 600;
+    "Security.PasswordQualityControl" = "retry=3 min=disabled,15,15,15,15 max=64 similar=deny passphrase=3";
+    "UserVars.SuppressHyperthreadWarning" = 0;
+    "UserVars.DcuiTimeOut" = 600;
+    "Config.HostAgent.plugins.solo.enableMob" = $false;
+    "DCUI.Access" = "root";
+    "Config.HostAgent.log.level" = "info";
+    "Net.DVFilterBindIpAddress" = "N/A";
+    "UserVars.SuppressShellWarning" = 0;
+    "UserVars.ESXiVPsDisabledProtocols" = "sslv3,tlsv1,tlsv1.1";
+    "Mem.ShareForceSalting" = 2;
+    "Syslog.global.auditRecord.storageEnable" = $true;
+    "Syslog.global.auditRecord.storageCapacity" = 100;
+    "Syslog.global.auditRecord.storageDirectory" = "Site Specific";
+    "Syslog.global.auditRecord.remoteEnable" = $true;
+    "Syslog.global.logLevel" = "info";
+    "Syslog.global.certificate.strictX509Compliance" = $true;
+    "Mem.MemEagerZero" = 1;
+    "Net.BMCNetworkEnable" = 0;
+    "ConfigManager.HostAccessManager.LockdownMode" = "normal";
 }
 
 # Obtener todos los hosts ESXi
 $esxiHosts = Get-VMHost
 
-# Lista para almacenar los resultados
-$resultados = @()
+# Diccionario para almacenar los resultados por host
+$resultadosPorHost = @{}
 
 # Verificar las configuraciones avanzadas en cada host ESXi
 foreach ($esxi in $esxiHosts) {
     Write-Host "Verificando configuraciones en el host '$($esxi.Name)'..."
+    $resultados = @()
     foreach ($key in $settings.Keys) {
         $expectedValue = $settings[$key]
         $currentSetting = Get-AdvancedSetting -Entity $esxi -Name $key -ErrorAction SilentlyContinue
@@ -66,7 +67,6 @@ foreach ($esxi in $esxiHosts) {
             }
             if ($currentValue -ne $expectedValue) {
                 $resultado = @{
-                    Host = $esxi.Name
                     Setting = $key
                     ExpectedValue = $expectedValue
                     CurrentValue = $currentSetting.Value
@@ -75,7 +75,6 @@ foreach ($esxi in $esxiHosts) {
                 Write-Host "ALERTA: Configuración '$key' en el host '$($esxi.Name)' tiene el valor '$($currentSetting.Value)' en lugar de '$expectedValue'."
             } else {
                 $resultado = @{
-                    Host = $esxi.Name
                     Setting = $key
                     ExpectedValue = $expectedValue
                     CurrentValue = $currentSetting.Value
@@ -85,7 +84,6 @@ foreach ($esxi in $esxiHosts) {
             }
         } else {
             $resultado = @{
-                Host = $esxi.Name
                 Setting = $key
                 ExpectedValue = $expectedValue
                 CurrentValue = "No existe"
@@ -95,11 +93,11 @@ foreach ($esxi in $esxiHosts) {
         }
         $resultados += $resultado
     }
+    $resultadosPorHost[$esxi.Name] = $resultados
 }
 
-# Ruta de los logotipos
-$logoWayclo = "file:///mnt/data/Disen%CC%83o%20sin%20ti%CC%81tulo-8.png"
-$logoAGD = "file:///mnt/data/aceitera-general-deheza-logo-3780B05472-seeklogo.com.png"
+# Ruta del logotipo de Wayclo
+$logoWayclo = "file:///C:/Scripts/wayclo.png"
 
 # Crear el contenido HTML
 $html = @"
@@ -118,39 +116,41 @@ $html = @"
 <body>
     <div style="text-align:center;">
         <img src="$logoWayclo" alt="Wayclo" style="height: 100px;"/>
-        <img src="$logoAGD" alt="AGD" style="height: 100px;"/>
     </div>
     <h1 style="text-align:center;">Control de configuraciones en los hosts</h1>
+"@
+
+foreach ($host in $resultadosPorHost.Keys) {
+    $html += @"
+    <h2>Host: $host</h2>
     <table>
         <tr>
-            <th>Host</th>
             <th>Configuración</th>
             <th>Valor Esperado</th>
             <th>Valor Actual</th>
             <th>Estado</th>
         </tr>
-"@
-
-foreach ($resultado in $resultados) {
-    $estadoClase = ""
-    switch ($resultado.Status) {
-        "Incorrecto" { $estadoClase = "incorrecto" }
-        "Correcto" { $estadoClase = "correcto" }
-        "No existe" { $estadoClase = "noexiste" }
-    }
-    $html += @"
+    "@
+    foreach ($resultado in $resultadosPorHost[$host]) {
+        $estadoClase = ""
+        switch ($resultado.Status) {
+            "Incorrecto" { $estadoClase = "incorrecto" }
+            "Correcto" { $estadoClase = "correcto" }
+            "No existe" { $estadoClase = "noexiste" }
+        }
+        $html += @"
         <tr class='$estadoClase'>
-            <td>$($resultado.Host)</td>
             <td>$($resultado.Setting)</td>
             <td>$($resultado.ExpectedValue)</td>
             <td>$($resultado.CurrentValue)</td>
             <td>$($resultado.Status)</td>
         </tr>
-"@
+        "@
+    }
+    $html += "</table>"
 }
 
 $html += @"
-    </table>
 </body>
 </html>
 "@
@@ -164,3 +164,4 @@ Disconnect-VIServer -Server $vCenterServer -Confirm:$false
 
 # Informar al usuario la ubicación del archivo generado
 Write-Host "El archivo de verificación ha sido guardado en $outputFilePath"
+
