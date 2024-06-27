@@ -47,13 +47,12 @@ $settings = @{
 # Obtener todos los hosts ESXi
 $esxiHosts = Get-VMHost
 
-# Diccionario para almacenar los resultados por host
-$resultadosPorHost = @{}
+# Lista para almacenar los resultados
+$resultados = @()
 
 # Verificar las configuraciones avanzadas en cada host ESXi
 foreach ($esxi in $esxiHosts) {
     Write-Host "Verificando configuraciones en el host '$($esxi.Name)'..."
-    $resultados = @()
     foreach ($key in $settings.Keys) {
         $expectedValue = $settings[$key]
         $currentSetting = Get-AdvancedSetting -Entity $esxi -Name $key -ErrorAction SilentlyContinue
@@ -67,6 +66,7 @@ foreach ($esxi in $esxiHosts) {
             }
             if ($currentValue -ne $expectedValue) {
                 $resultado = @{
+                    Host = $esxi.Name
                     Setting = $key
                     ExpectedValue = $expectedValue
                     CurrentValue = $currentSetting.Value
@@ -75,6 +75,7 @@ foreach ($esxi in $esxiHosts) {
                 Write-Host "ALERTA: Configuración '$key' en el host '$($esxi.Name)' tiene el valor '$($currentSetting.Value)' en lugar de '$expectedValue'."
             } else {
                 $resultado = @{
+                    Host = $esxi.Name
                     Setting = $key
                     ExpectedValue = $expectedValue
                     CurrentValue = $currentSetting.Value
@@ -84,6 +85,7 @@ foreach ($esxi in $esxiHosts) {
             }
         } else {
             $resultado = @{
+                Host = $esxi.Name
                 Setting = $key
                 ExpectedValue = $expectedValue
                 CurrentValue = "No existe"
@@ -93,11 +95,10 @@ foreach ($esxi in $esxiHosts) {
         }
         $resultados += $resultado
     }
-    $resultadosPorHost[$esxi.Name] = $resultados
 }
 
 # Ruta del logotipo de Wayclo
-$logoWayclo = "file:///C:/Scripts/wayclo.png"
+$logoWayclo = "C:\Scripts\wayclo.png"
 
 # Crear el contenido HTML
 $html = @"
@@ -114,43 +115,40 @@ $html = @"
     </style>
 </head>
 <body>
-    <div style='text-align:center;'>
-        <img src='$logoWayclo' alt='Wayclo' style='height: 100px;'/>
+    <div style="text-align:center;">
+        <img src="$logoWayclo" alt="Wayclo" style="height: 100px;"/>
     </div>
-    <h1 style='text-align:center;'>Control de configuraciones en los hosts</h1>
-"@
-
-foreach ($host in $resultadosPorHost.Keys) {
-    $html += @"
-    <h2>Host: $host</h2>
+    <h1 style="text-align:center;">Control de configuraciones en los hosts</h1>
     <table>
         <tr>
+            <th>Host</th>
             <th>Configuración</th>
             <th>Valor Esperado</th>
             <th>Valor Actual</th>
             <th>Estado</th>
         </tr>
-    "@
-    foreach ($resultado in $resultadosPorHost[$host]) {
-        $estadoClase = ""
-        switch ($resultado.Status) {
-            "Incorrecto" { $estadoClase = "incorrecto" }
-            "Correcto" { $estadoClase = "correcto" }
-            "No existe" { $estadoClase = "noexiste" }
-        }
-        $html += @"
+"@
+
+foreach ($resultado in $resultados) {
+    $estadoClase = ""
+    switch ($resultado.Status) {
+        "Incorrecto" { $estadoClase = "incorrecto" }
+        "Correcto" { $estadoClase = "correcto" }
+        "No existe" { $estadoClase = "noexiste" }
+    }
+    $html += @"
         <tr class='$estadoClase'>
+            <td>$($resultado.Host)</td>
             <td>$($resultado.Setting)</td>
             <td>$($resultado.ExpectedValue)</td>
             <td>$($resultado.CurrentValue)</td>
             <td>$($resultado.Status)</td>
         </tr>
-        "@
-    }
-    $html += "</table>"
+"@
 }
 
 $html += @"
+    </table>
 </body>
 </html>
 "@
