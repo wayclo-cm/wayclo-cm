@@ -47,12 +47,13 @@ $settings = @{
 # Obtener todos los hosts ESXi
 $esxiHosts = Get-VMHost
 
-# Lista para almacenar los resultados
-$resultados = @()
+# Diccionario para almacenar los resultados por host
+$resultadosPorHost = @{}
 
 # Verificar las configuraciones avanzadas en cada host ESXi
 foreach ($esxi in $esxiHosts) {
     Write-Host "Verificando configuraciones en el host '$($esxi.Name)'..."
+    $resultados = @()
     foreach ($key in $settings.Keys) {
         $expectedValue = $settings[$key]
         $currentSetting = Get-AdvancedSetting -Entity $esxi -Name $key -ErrorAction SilentlyContinue
@@ -97,6 +98,7 @@ foreach ($esxi in $esxiHosts) {
         }
         $resultados += $resultado
     }
+    $resultadosPorHost[$esxi.Name] = $resultados
 }
 
 # Ruta del logotipo de Wayclo
@@ -121,36 +123,39 @@ $html = @"
         <img src="$logoWayclo" alt="Wayclo" style="height: 100px;"/>
     </div>
     <h1 style="text-align:center;">Control de configuraciones en los hosts</h1>
+"@
+
+foreach ($host in $resultadosPorHost.Keys) {
+    $html += @"
+    <h2>Host: $host</h2>
     <table>
         <tr>
-            <th>Host</th>
             <th>Configuración</th>
             <th>Valor Esperado</th>
             <th>Valor Actual</th>
             <th>Estado</th>
         </tr>
-"@
-
-foreach ($resultado in $resultados) {
-    $estadoClase = ""
-    switch ($resultado.Status) {
-        "Incorrecto" { $estadoClase = "incorrecto" }
-        "Correcto" { $estadoClase = "correcto" }
-        "No existe" { $estadoClase = "noexiste" }
-    }
-    $html += @"
+    "@
+    foreach ($resultado in $resultadosPorHost[$host]) {
+        $estadoClase = ""
+        switch ($resultado.Status) {
+            "Incorrecto" { $estadoClase = "incorrecto" }
+            "Correcto" { $estadoClase = "correcto" }
+            "No existe" { $estadoClase = "noexiste" }
+        }
+        $html += @"
         <tr class='$estadoClase'>
-            <td>$($resultado.Host)</td>
             <td>$($resultado.Setting)</td>
             <td>$($resultado.ExpectedValue)</td>
             <td>$($resultado.CurrentValue)</td>
             <td>$($resultado.Status)</td>
         </tr>
-"@
+        "@
+    }
+    $html += "</table>"
 }
 
 $html += @"
-    </table>
 </body>
 </html>
 "@
