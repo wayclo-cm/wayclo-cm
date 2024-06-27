@@ -47,13 +47,12 @@ $settings = @{
 # Obtener todos los hosts ESXi
 $esxiHosts = Get-VMHost
 
-# Diccionario para almacenar los resultados por host
-$resultadosPorHost = @{}
+# Lista para almacenar los resultados
+$resultados = @()
 
 # Verificar las configuraciones avanzadas en cada host ESXi
 foreach ($esxi in $esxiHosts) {
     Write-Host "Verificando configuraciones en el host '$($esxi.Name)'..."
-    $resultados = @()
     foreach ($key in $settings.Keys) {
         $expectedValue = $settings[$key]
         $currentSetting = Get-AdvancedSetting -Entity $esxi -Name $key -ErrorAction SilentlyContinue
@@ -98,7 +97,6 @@ foreach ($esxi in $esxiHosts) {
         }
         $resultados += $resultado
     }
-    $resultadosPorHost[$esxi.Name] = $resultados
 }
 
 # Ruta del logotipo de Wayclo
@@ -114,48 +112,45 @@ $html = @"
         th, td { border: 1px solid black; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
         .incorrecto { background-color: #ffcccb; } /* Rojo pastel */
-        .correcto { background-color: #6afaf0; }  /* Verde agua */
-        .noexiste { background-color: #fff3cd; }  /* Amarillo pastel */
+        .correcto { background-color: #6afaf0; }  /* #6afaf0 */
+        .noexiste { background-color: #fff3cd; }
     </style>
 </head>
 <body>
-    <div style='text-align:center;'>
-        <img src='$logoWayclo' alt='Wayclo' style='height: 100px;'/>
+    <div style="text-align:center;">
+        <img src="$logoWayclo" alt="Wayclo" style="height: 100px;"/>
     </div>
-    <h1 style='text-align:center;'>Control de configuraciones en los hosts</h1>
-"@
-
-foreach ($host in $resultadosPorHost.Keys) {
-    $html += @"
-    <h2>Host: $host</h2>
+    <h1 style="text-align:center;">Control de configuraciones en los hosts</h1>
     <table>
         <tr>
+            <th>Host</th>
             <th>Configuración</th>
             <th>Valor Esperado</th>
             <th>Valor Actual</th>
             <th>Estado</th>
         </tr>
-    "
-    foreach ($resultado in $resultadosPorHost[$host]) {
-        $estadoClase = ""
-        switch ($resultado.Status) {
-            "Incorrecto" { $estadoClase = "incorrecto" }
-            "Correcto" { $estadoClase = "correcto" }
-            "No existe" { $estadoClase = "noexiste" }
-        }
-        $html += @"
+"@
+
+foreach ($resultado in $resultados) {
+    $estadoClase = ""
+    switch ($resultado.Status) {
+        "Incorrecto" { $estadoClase = "incorrecto" }
+        "Correcto" { $estadoClase = "correcto" }
+        "No existe" { $estadoClase = "noexiste" }
+    }
+    $html += @"
         <tr class='$estadoClase'>
+            <td>$($resultado.Host)</td>
             <td>$($resultado.Setting)</td>
             <td>$($resultado.ExpectedValue)</td>
             <td>$($resultado.CurrentValue)</td>
             <td>$($resultado.Status)</td>
         </tr>
-        "
-    }
-    $html += "</table>"
+"@
 }
 
 $html += @"
+    </table>
 </body>
 </html>
 "@
