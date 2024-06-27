@@ -13,6 +13,43 @@ Connect-VIServer -Server $vCenterServer -User $user -Password $password
 $settings = @{
     "Config.HostAgent.plugins.hostsvc.esxAdminsGroupAutoAdd" = "false";
     "Config.HostAgent.plugins.vimsvc.authValidateInterval" = "90";
+    “Security.AccountUnlockTime” =
+    “Security.AccountLockFailures” =
+    “Security.PasswordHistory” =
+    “Syslog.global.logDir” =
+    “Syslog.global.logHost” =
+    “Net.BlockGuestBPDU” =
+    “UserVars.ESXiShellInteractiveTimeOut” =
+    “UserVars.ESXiShellTimeOut” =
+    “Security.PasswordQualityControl” =
+    “UserVars.SuppressHyperthreadWarning” =
+    “UserVars.DcuiTimeOut” =
+    “Config.HostAgent.plugins.solo.enableMob” =
+    “DCUI.Access” =
+    “Config.HostAgent.log.level” =
+    “Net.DVFilterBindIpAddress” =
+    “UserVars.SuppressShellWarning” =
+    “UserVars.ESXiVPsDisabledProtocols” =
+    “Mem.ShareForceSalting” =
+    “Syslog.global.auditRecord.storageEnable” =
+    “Syslog.global.auditRecord.storageCapacity” =
+    “Syslog.global.auditRecord.storageDirectory” =
+    “Syslog.global.auditRecord.remoteEnable” =
+    “Syslog.global.logLevel” =
+    “Syslog.global.certificate.strictX509Compliance” =
+    “Mem.MemEagerZero” =
+    “Net.BMCNetworkEnable” =
+    “ConfigManager.HostAccessManager.LockdownMode” =
+    “” =
+    “” =
+    “” =
+    “” =
+    “” =
+    “” =
+    “” =
+    “” =
+    “” =
+    “” =
 }
 
 # Obtener todos los hosts ESXi
