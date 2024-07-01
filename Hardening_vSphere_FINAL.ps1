@@ -166,7 +166,7 @@ $html = @"
     <div style="text-align:center;">
         <img src="$logoWayclo" alt="Wayclo" style="height: 100px;"/>
     </div>
-    <h1 style="text-align:center;">Hardening vSphere</h1>
+    <h1 style="text-align:center;">Verificación de Configuraciones Avanzadas de ESXi</h1>
     <table id="resultsTable">
         <tr>
             <th>Host<br><input type="text" id="hostFilter" onkeyup="filterTable()"></th>
