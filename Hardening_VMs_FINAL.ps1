@@ -83,9 +83,6 @@ foreach ($vm in $vms) {
     }
 }
 
-# Ruta del logotipo de Wayclo
-$logoWayclo = "C:\Scripts\wayclo.png"
-
 # Crear el contenido HTML
 $html = @"
 <html>
@@ -127,9 +124,6 @@ $html = @"
     </script>
 </head>
 <body>
-    <div style="text-align:center;">
-        <img src="$logoWayclo" alt="Wayclo" style="height: 100px;"/>
-    </div>
     <h1 style="text-align:center;">Verificación de Configuraciones Avanzadas de VMs</h1>
     <table id="resultsTable">
         <tr>
