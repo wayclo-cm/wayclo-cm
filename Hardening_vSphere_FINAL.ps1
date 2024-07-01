@@ -1,8 +1,10 @@
 # Importar el módulo de VMware PowerCLI
 Import-Module VMware.PowerCLI
 
+# Solicitar la dirección IP del servidor vCenter
+$vCenterServer = Read-Host "Ingrese la dirección IP del servidor vCenter"
+
 # Solicitar las credenciales de usuario
-$vCenterServer = "172.30.6.71"
 $credential = Get-Credential -Message "Ingrese las credenciales para el servidor vCenter"
 
 # Solicitar el nombre del archivo de salida
@@ -18,8 +20,8 @@ $settings = @{
     "Security.AccountUnlockTime" = 900;
     "Security.AccountLockFailures" = 5;
     "Security.PasswordHistory" = 5;
-    "Syslog.global.logDir" = "Site Specific";
-    "Syslog.global.logHost" = "Site Specific";
+    "Syslog.global.logDir" = "Sitio Especifico";
+    "Syslog.global.logHost" = "Sitio Especifico";
     "Net.BlockGuestBPDU" = 1;
     "UserVars.ESXiShellInteractiveTimeOut" = 900;
     "UserVars.ESXiShellTimeOut" = 600;
@@ -35,13 +37,13 @@ $settings = @{
     "Mem.ShareForceSalting" = 2;
     "Syslog.global.auditRecord.storageEnable" = $true;
     "Syslog.global.auditRecord.storageCapacity" = 100;
-    "Syslog.global.auditRecord.storageDirectory" = "Site Specific";
+    "Syslog.global.auditRecord.storageDirectory" = "Sitio Especifico";
     "Syslog.global.auditRecord.remoteEnable" = $true;
     "Syslog.global.logLevel" = "info";
     "Syslog.global.certificate.strictX509Compliance" = $true;
     "Mem.MemEagerZero" = 1;
     "Net.BMCNetworkEnable" = 0;
-    "ConfigManager.HostAccessManager.LockdownMode" = "normal";
+    "ConfigManager.HostAccessManager.LockdownMode" = "lockdownNormal";
 }
 
 # Obtener todos los hosts ESXi
@@ -53,36 +55,53 @@ $resultados = @()
 # Verificar las configuraciones avanzadas en cada host ESXi
 foreach ($esxi in $esxiHosts) {
     Write-Host "Verificando configuraciones en el host '$($esxi.Name)'..."
+
     foreach ($key in $settings.Keys) {
         $expectedValue = $settings[$key]
-        $currentSetting = Get-AdvancedSetting -Entity $esxi -Name $key -ErrorAction SilentlyContinue
+
+        # Obtener el valor actual del setting
+        if ($key -eq "ConfigManager.HostAccessManager.LockdownMode") {
+            $currentSetting = (Get-View (Get-VMHost -Name $esxi | Get-View).ConfigManager.HostAccessManager).LockdownMode
+        } else {
+            $currentSetting = Get-AdvancedSetting -Entity $esxi -Name $key -ErrorAction SilentlyContinue
+        }
+
         if ($currentSetting) {
-            $currentValue = $currentSetting.Value
+            $currentValue = if ($key -eq "ConfigManager.HostAccessManager.LockdownMode") {
+                $currentSetting
+            } else {
+                $currentSetting.Value
+            }
+
             # Convertir el valor actual a tipo booleano o entero según el valor esperado
             if ($expectedValue -is [bool]) {
-                $currentValue = [bool]::Parse($currentSetting.Value)
+                $currentValue = [bool]::Parse($currentValue)
             } elseif ($expectedValue -is [int]) {
-                $currentValue = [int]$currentSetting.Value
-            } elseif ($expectedValue -is [string] -and $expectedValue -ne "Site Specific" -and $expectedValue -ne "N/A") {
-                $currentValue = $currentSetting.Value
+                $currentValue = [int]$currentValue
             }
-            if ($currentValue -ne $expectedValue) {
-                $resultado = @{
-                    Host = $esxi.Name
-                    Setting = $key
-                    ExpectedValue = $expectedValue
-                    CurrentValue = $currentSetting.Value
-                    Status = "Incorrecto"
+            $status = "OK"
+
+            if ($key -eq "Syslog.global.logDir" -or $key -eq "Syslog.global.logHost" -or $key -eq "Syslog.global.auditRecord.storageDirectory") {
+                if ($currentValue -eq "[] /scratch/Log" -or $currentValue -eq "[] /scratch/auditLog" -or $currentValue -eq "N/A") {
+                    $status = "Warning"
+                } elseif ([string]::IsNullOrEmpty($currentValue)) {
+                    $status = "No existe"
                 }
-                Write-Host "ALERTA: Configuración '$key' en el host '$($esxi.Name)' tiene el valor '$($currentSetting.Value)' en lugar de '$expectedValue'."
+            } elseif ($currentValue -ne $expectedValue) {
+                $status = "Warning"
+            }
+
+            $resultado = @{
+                Host = $esxi.Name
+                Setting = $key
+                ExpectedValue = $expectedValue
+                CurrentValue = $currentValue
+                Status = $status
+            }
+            
+            if ($status -eq "Warning") {
+                Write-Host "ALERTA: Configuración '$key' en el host '$($esxi.Name)' tiene el valor '$currentValue'."
             } else {
-                $resultado = @{
-                    Host = $esxi.Name
-                    Setting = $key
-                    ExpectedValue = $expectedValue
-                    CurrentValue = $currentSetting.Value
-                    Status = "Correcto"
-                }
                 Write-Host "Configuración '$key' en el host '$($esxi.Name)' es correcta."
             }
         } else {
@@ -95,6 +114,7 @@ foreach ($esxi in $esxiHosts) {
             }
             Write-Host "ALERTA: Configuración '$key' no existe en el host '$($esxi.Name)'."
         }
+
         $resultados += $resultado
     }
 }
@@ -110,32 +130,57 @@ $html = @"
     <style>
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid black; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .incorrecto { background-color: #ffcccb; } /* Rojo pastel */
-        .correcto { background-color: #6afaf0; }  /* #6afaf0 */
-        .noexiste { background-color: #fff3cd; }
+        th { background-color: #F2F2F2; }
+        .warning { background-color: #FFCCCB; } /* Rojo pastel */
+        .OK { background-color: #6AFAF0; }  /* Verde pastel */
+        .noexiste { background-color: #FFF3CD; } /* Amarillo pastel */
     </style>
+    <script>
+        function filterTable() {
+            var hostInput = document.getElementById('hostFilter').value.toLowerCase();
+            var settingInput = document.getElementById('settingFilter').value.toLowerCase();
+            var statusInput = document.getElementById('statusFilter').value.toLowerCase();
+            var table = document.getElementById('resultsTable');
+            var tr = table.getElementsByTagName('tr');
+            for (var i = 1; i < tr.length; i++) {
+                var tdHost = tr[i].getElementsByTagName('td')[0];
+                var tdSetting = tr[i].getElementsByTagName('td')[1];
+                var tdStatus = tr[i].getElementsByTagName('td')[4];
+                if (tdHost && tdSetting && tdStatus) {
+                    var hostValue = tdHost.textContent || tdHost.innerText;
+                    var settingValue = tdSetting.textContent || tdSetting.innerText;
+                    var statusValue = tdStatus.textContent || tdStatus.innerText;
+                    if (hostValue.toLowerCase().indexOf(hostInput) > -1 &&
+                        settingValue.toLowerCase().indexOf(settingInput) > -1 &&
+                        statusValue.toLowerCase().indexOf(statusInput) > -1) {
+                        tr[i].style.display = '';
+                    } else {
+                        tr[i].style.display = 'none';
+                    }
+                }
+            }
+        }
+    </script>
 </head>
 <body>
     <div style="text-align:center;">
         <img src="$logoWayclo" alt="Wayclo" style="height: 100px;"/>
     </div>
-    <h1 style="text-align:center;">Control de configuraciones en los hosts</h1>
-    <table>
+    <h1 style="text-align:center;">Hardening vSphere</h1>
+    <table id="resultsTable">
         <tr>
-            <th>Host</th>
-            <th>Configuración</th>
+            <th>Host<br><input type="text" id="hostFilter" onkeyup="filterTable()"></th>
+            <th>Configuración<br><input type="text" id="settingFilter" onkeyup="filterTable()"></th>
             <th>Valor Esperado</th>
             <th>Valor Actual</th>
-            <th>Estado</th>
+            <th>Estado<br><input type="text" id="statusFilter" onkeyup="filterTable()"></th>
         </tr>
 "@
-
 foreach ($resultado in $resultados) {
     $estadoClase = ""
     switch ($resultado.Status) {
-        "Incorrecto" { $estadoClase = "incorrecto" }
-        "Correcto" { $estadoClase = "correcto" }
+        "Warning" { $estadoClase = "warning" }
+        "OK" { $estadoClase = "ok" }
         "No existe" { $estadoClase = "noexiste" }
     }
     $html += @"
@@ -148,13 +193,11 @@ foreach ($resultado in $resultados) {
         </tr>
 "@
 }
-
 $html += @"
     </table>
 </body>
 </html>
 "@
-
 # Guardar el contenido HTML en un archivo
 $outputFilePath = "C:\Scripts\$outputFileName.html"
 $html | Out-File -FilePath $outputFilePath -Encoding UTF8
