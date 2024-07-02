@@ -193,7 +193,7 @@ $html += @"
 </html>
 "@
 # Guardar el contenido HTML en un archivo
-$outputFilePath = "C:\Scripts\$outputFileName.html"
+$outputFilePath = "C:\$outputFileName.html"
 $html | Out-File -FilePath $outputFilePath -Encoding UTF8
 
 # Desconectar de vCenter
