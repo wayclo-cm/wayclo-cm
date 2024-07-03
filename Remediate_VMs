@@ -20,12 +20,12 @@ Connect-VIServer -Server $vCenterServer -Credential $credential
 
 # Configuraciones avanzadas a establecer
 $settings = @{
-    "mks.enable3d" = "false";
-    "isolation.device.edit.disable" = "true";
+    "mks.enable3d" = $false;
+    "isolation.device.edit.disable" = $true;
     "RemoteDisplay.maxConnections" = 1;
     "log.keepOld" = 10;
     "log.rotateSize" = 2048000;
-    "tools.guest.desktop.autolock" = "true";
+    "tools.guest.desktop.autolock" = $true;
 }
 
 # Lista de VMs a excluir de la remediación
