@@ -168,7 +168,7 @@ $html = @"
     <table id="resultsTable">
         <tr>
             <th>Host<br><input type="text" id="hostFilter" onkeyup="filterTable()"></th>
-            <th>Configuración<br><input type="text" id="settingFilter" onkeyup="filterTable()"></th>
+            <th>Configuracion<br><input type="text" id="settingFilter" onkeyup="filterTable()"></th>
             <th>Valor Esperado</th>
             <th>Valor Actual</th>
             <th>Estado<br><input type="text" id="statusFilter" onkeyup="filterTable()"></th>
