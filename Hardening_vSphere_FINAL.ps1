@@ -1,5 +1,6 @@
 Set-PowerCLIConfiguration -InvalidCertificateAction Ignore -Confirm:$false
 Set-PowerCLIConfiguration -Scope AllUsers -ParticipateInCEIP $false -Confirm:$false
+Set-ExecutionPolicy Unrestricted
 
 # Importar el módulo de VMware PowerCLI
 Import-Module VMware.VimAutomation.Core -WarningAction SilentlyContinue
