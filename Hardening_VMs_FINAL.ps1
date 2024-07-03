@@ -1,14 +1,18 @@
+Set-PowerCLIConfiguration -InvalidCertificateAction Ignore -Confirm:$false
+Set-PowerCLIConfiguration -Scope AllUsers -ParticipateInCEIP $false -Confirm:$false
+
 # Importar el módulo de VMware PowerCLI
+Import-Module VMware.VimAutomation.Core -WarningAction SilentlyContinue
 Import-Module VMware.PowerCLI
 
 # Solicitar la dirección IP del servidor vCenter
-$vCenterServer = Read-Host "Ingrese la dirección IP del servidor vCenter"
+$vCenterServer = Read-Host "Ingrese la direccion IP del servidor vCenter"
 
 # Solicitar las credenciales de usuario
 $credential = Get-Credential -Message "Ingrese las credenciales para el servidor vCenter"
 
 # Solicitar el nombre del archivo de salida
-$outputFileName = Read-Host "Ingrese el nombre del archivo de salida (sin extensión)"
+$outputFileName = Read-Host "Ingrese el nombre del archivo de salida (sin extension)"
 
 # Conectar a vCenter
 Connect-VIServer -Server $vCenterServer -Credential $credential
@@ -64,7 +68,7 @@ foreach ($vm in $vms) {
             }
 
             if ($status -eq "Warning") {
-                Write-Host "ALERTA: Configuración '$key' en la VM '$($vm.Name)' tiene el valor '$currentValue'."
+                Write-Host "ALERTA: Configuracion '$key' en la VM '$($vm.Name)' tiene el valor '$currentValue'."
             } else {
                 Write-Host "Configuración '$key' en la VM '$($vm.Name)' es correcta."
             }
@@ -76,7 +80,7 @@ foreach ($vm in $vms) {
                 CurrentValue = "No existe"
                 Status = "No existe"
             }
-            Write-Host "ALERTA: Configuración '$key' no existe en la VM '$($vm.Name)'."
+            Write-Host "ALERTA: Configuracion '$key' no existe en la VM '$($vm.Name)'."
         }
 
         $resultados += $resultado
@@ -87,7 +91,7 @@ foreach ($vm in $vms) {
 $html = @"
 <html>
 <head>
-    <title>Verificación de Configuraciones Avanzadas de VMs</title>
+    <title>Verificacion de Configuraciones Avanzadas de VMs</title>
     <style>
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid black; padding: 8px; text-align: left; }
@@ -124,11 +128,11 @@ $html = @"
     </script>
 </head>
 <body>
-    <h1 style="text-align:center;">Verificación de Configuraciones Avanzadas de VMs</h1>
+    <h1 style="text-align:center;">Verificacion de Configuraciones Avanzadas de VMs</h1>
     <table id="resultsTable">
         <tr>
             <th>VM<br><input type="text" id="hostFilter" onkeyup="filterTable()"></th>
-            <th>Configuración<br><input type="text" id="settingFilter" onkeyup="filterTable()"></th>
+            <th>Configuracion<br><input type="text" id="settingFilter" onkeyup="filterTable()"></th>
             <th>Valor Esperado</th>
             <th>Valor Actual</th>
             <th>Estado<br><input type="text" id="statusFilter" onkeyup="filterTable()"></th>
@@ -164,4 +168,4 @@ $html | Out-File -FilePath $outputFilePath -Encoding UTF8
 Disconnect-VIServer -Server $vCenterServer -Confirm:$false
 
 # Informar al usuario la ubicación del archivo generado
-Write-Host "El archivo de verificación ha sido guardado en $outputFilePath"
+Write-Host "El archivo de verificacion ha sido guardado en $outputFilePath"
