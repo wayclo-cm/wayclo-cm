@@ -27,7 +27,6 @@ $settings = @{
     "Security.PasswordHistory" = 5;
     "Syslog.global.logDir" = "Sitio Especifico";
     "Syslog.global.logHost" = "Sitio Especifico";
-    "Net.BlockGuestBPDU" = 1;
     "UserVars.ESXiShellInteractiveTimeOut" = 900;
     "UserVars.ESXiShellTimeOut" = 600;
     "Security.PasswordQualityControl" = "retry=3 min=disabled,15,15,15,15 max=64 similar=deny passphrase=3";
