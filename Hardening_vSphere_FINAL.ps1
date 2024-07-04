@@ -105,7 +105,7 @@ foreach ($esxi in $esxiHosts) {
             }
             
             if ($status -eq "Warning") {
-                Write-Host "ALERTA: Configuración '$key' en el host '$($esxi.Name)' tiene el valor '$currentValue'."
+                Write-Host "ALERTA: Configuracion '$key' en el host '$($esxi.Name)' tiene el valor '$currentValue'."
             } else {
                 Write-Host "Configuracion '$key' en el host '$($esxi.Name)' es correcta."
             }
