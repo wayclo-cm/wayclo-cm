@@ -36,6 +36,7 @@ $settings = @{
     "DCUI.Access" = "root";
     "Config.HostAgent.log.level" = "info";
     "Net.DVFilterBindIpAddress" = "N/A";
+    "Net.BlockGuestBPDU" = 1;
     "UserVars.SuppressShellWarning" = 0;
     "UserVars.ESXiVPsDisabledProtocols" = "sslv3,tlsv1,tlsv1.1";
     "Mem.ShareForceSalting" = 2;
