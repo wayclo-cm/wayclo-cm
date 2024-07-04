@@ -46,7 +46,6 @@ $settings = @{
     "Syslog.global.logLevel" = "info";
     "Syslog.global.certificate.strictX509Compliance" = $true;
     "Mem.MemEagerZero" = 1;
-    "Net.BMCNetworkEnable" = 0;
     "ConfigManager.HostAccessManager.LockdownMode" = "lockdownNormal";
 }
 
