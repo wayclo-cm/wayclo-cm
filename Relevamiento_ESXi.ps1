@@ -36,7 +36,6 @@ $settings = @{
     "DCUI.Access" = "root";
     "Config.HostAgent.log.level" = "info";
     "Net.BlockGuestBPDU" = 1;
-    "UserVars.SuppressShellWarning" = 0;
     "UserVars.ESXiVPsDisabledProtocols" = "sslv3,tlsv1,tlsv1.1";
     "Mem.ShareForceSalting" = 2;
     "Syslog.global.auditRecord.storageEnable" = $true;
