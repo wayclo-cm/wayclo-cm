@@ -77,8 +77,7 @@ foreach ($esxi in $esxiHosts) {
 
         if ($currentValue -ne $expectedValue) {
             if ($key -eq "ConfigManager.HostAccessManager.LockdownMode") {
-                $hostAccessManager = Get-View -Id (Get-VMHost -Name $esxi).ExtensionData.ConfigManager.HostAccessManager
-                $hostAccessManager.UpdateLockdownMode($expectedValue)
+                (Get-View (Get-VMHost -Name $esxi | Get-View).ConfigManager.HostAccessManager).ChangeLockdownMode($expectedValue)
                 $status = "Actualizado"
             } else {
                 Set-AdvancedSetting -Entity $esxi -Name $key -Value $expectedValue -Confirm:$false
@@ -111,7 +110,7 @@ $html = @"
         th, td { border: 1px solid black; padding: 8px; text-align: left; }
         th { background-color: #F2F2F2; }
         .actualizado { background-color: #FFCCCB; } /* Rojo pastel */
-        .correcto { background-color: #B0F2C2; }  /* Verde pastel */
+        .correcto { background-color: #6AFAF0; }  /* Verde pastel */
     </style>
     <script>
         function filterTable() {
