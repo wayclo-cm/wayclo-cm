@@ -71,7 +71,7 @@ foreach ($vm in $vms) {
             if ($status -eq "Warning") {
                 Write-Host "ALERTA: Configuracion '$key' en la VM '$($vm.Name)' tiene el valor '$currentValue'."
             } else {
-                Write-Host "Configuración '$key' en la VM '$($vm.Name)' es correcta."
+                Write-Host "Configuracion '$key' en la VM '$($vm.Name)' es correcta."
             }
         } else {
             $resultado = @{
