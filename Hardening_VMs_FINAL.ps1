@@ -98,7 +98,7 @@ $html = @"
         th, td { border: 1px solid black; padding: 8px; text-align: left; }
         th { background-color: #F2F2F2; }
         .warning { background-color: #FFCCCB; } /* Rojo pastel */
-        .OK { background-color: #6AFAF0; }  /* Verde pastel */
+        .OK { background-color: #B0F2C2; }  /* Verde pastel */
         .noexiste { background-color: #FFF3CD; } /* Amarillo pastel */
     </style>
     <script>
