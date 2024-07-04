@@ -58,16 +58,16 @@ foreach ($vm in $vms) {
                 # Actualizar el valor si es incorrecto
                 Set-AdvancedSetting -AdvancedSetting $currentSetting -Value $expectedValue -Confirm:$false
                 $status = "Actualizado"
-                Write-Host "ALERTA: Configuración '$key' en la VM '$($vm.Name)' ha sido actualizada de '$currentValue' a '$expectedValue'."
+                Write-Host "ALERTA: Configuracion '$key' en la VM '$($vm.Name)' ha sido actualizada de '$currentValue' a '$expectedValue'."
             } else {
                 $status = "Correcto"
-                Write-Host "Configuración '$key' en la VM '$($vm.Name)' ya es correcta."
+                Write-Host "Configuracion '$key' en la VM '$($vm.Name)' ya es correcta."
             }
         } else {
             # Crear y establecer el valor si no existe
             New-AdvancedSetting -Entity $vm -Name $key -Value $expectedValue -Confirm:$false
             $status = "Creado"
-            Write-Host "ALERTA: Configuración '$key' no existía en la VM '$($vm.Name)' y ha sido creada con valor '$expectedValue'."
+            Write-Host "ALERTA: Configuracion '$key' no existía en la VM '$($vm.Name)' y ha sido creada con valor '$expectedValue'."
         }
 
         $resultado = @{
@@ -122,7 +122,7 @@ $html = @"
     </script>
 </head>
 <body>
-    <h1 style="text-align:center;">Aplicación de Configuraciones Avanzadas de VMs</h1>
+    <h1 style="text-align:center;">Aplicacion de Configuraciones Avanzadas de VMs</h1>
     <table id="resultsTable">
         <tr>
             <th>VM<br><input type="text" id="hostFilter" onkeyup="filterTable()"></th>
