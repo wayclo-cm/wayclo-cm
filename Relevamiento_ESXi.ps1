@@ -30,12 +30,13 @@ $settings = @{
     "UserVars.ESXiShellInteractiveTimeOut" = 900;
     "UserVars.ESXiShellTimeOut" = 600;
     "Security.PasswordQualityControl" = "retry=3 min=disabled,15,15,15,15 max=64 similar=deny passphrase=3";
-    "UserVars.SuppressHyperthreadWarning" = 1;
+    "UserVars.SuppressHyperthreadWarning" = 0;
     "UserVars.DcuiTimeOut" = 600;
     "Config.HostAgent.plugins.solo.enableMob" = $false;
     "DCUI.Access" = "root";
     "Config.HostAgent.log.level" = "info";
     "Net.BlockGuestBPDU" = 1;
+    "UserVars.SuppressShellWarning" = 0;
     "UserVars.ESXiVPsDisabledProtocols" = "sslv3,tlsv1,tlsv1.1";
     "Mem.ShareForceSalting" = 2;
     "Syslog.global.auditRecord.storageEnable" = $true;
