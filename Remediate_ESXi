@@ -7,13 +7,13 @@ Import-Module VMware.VimAutomation.Core -WarningAction SilentlyContinue
 Import-Module VMware.PowerCLI
 
 # Solicitar la dirección IP del servidor vCenter
-$vCenterServer = Read-Host "Ingrese la direccion IP del servidor vCenter"
+$vCenterServer = Read-Host "Ingrese la dirección IP del servidor vCenter"
 
 # Solicitar las credenciales de usuario
 $credential = Get-Credential -Message "Ingrese las credenciales para el servidor vCenter"
 
 # Solicitar el nombre del archivo de salida
-$outputFileName = Read-Host "Ingrese el nombre del archivo de salida (sin extension)"
+$outputFileName = Read-Host "Ingrese el nombre del archivo de salida (sin extensión)"
 
 # Conectar a vCenter
 Connect-VIServer -Server $vCenterServer -Credential $credential
@@ -28,6 +28,7 @@ $settings = @{
     "UserVars.ESXiShellInteractiveTimeOut" = 900;
     "UserVars.ESXiShellTimeOut" = 600;
     "Security.PasswordQualityControl" = "retry=3 min=disabled,15,15,15,15 max=64 similar=deny passphrase=3";
+    "UserVars.SuppressHyperthreadWarning" = 0;
     "UserVars.DcuiTimeOut" = 600;
     "Config.HostAgent.plugins.solo.enableMob" = $false;
     "DCUI.Access" = "root";
@@ -59,33 +60,23 @@ foreach ($esxi in $esxiHosts) {
         $expectedValue = $settings[$key]
 
         # Obtener el valor actual del setting
-        if ($key -eq "ConfigManager.HostAccessManager.LockdownMode") {
-            $currentSetting = (Get-View (Get-VMHost -Name $esxi | Get-View).ConfigManager.HostAccessManager).LockdownMode
-            $currentValue = $currentSetting
-        } else {
-            $currentSetting = Get-AdvancedSetting -Entity $esxi -Name $key -ErrorAction SilentlyContinue
-            $currentValue = $currentSetting.Value
-        }
+        $currentSetting = Get-AdvancedSetting -Entity $esxi -Name $key -ErrorAction SilentlyContinue
 
-        # Convertir el valor actual a tipo booleano o entero según el valor esperado
-        if ($expectedValue -is [bool]) {
-            $currentValue = [bool]::Parse($currentValue)
-        } elseif ($expectedValue -is [int]) {
-            $currentValue = [int]$currentValue
-        }
-
-        if ($currentValue -ne $expectedValue) {
-            if ($key -eq "ConfigManager.HostAccessManager.LockdownMode") {
-                (Get-View (Get-VMHost -Name $esxi | Get-View).ConfigManager.HostAccessManager).ChangeLockdownMode($expectedValue)
+        if ($currentSetting) {
+            # La configuración ya existe, actualizar si es necesario
+            if ($currentSetting.Value -ne $expectedValue) {
+                Set-AdvancedSetting -AdvancedSetting $currentSetting -Value $expectedValue -Confirm:$false
+                Write-Host "ALERTA: Configuración '$key' en el host '$($esxi.Name)' ha sido actualizada de '$($currentSetting.Value)' a '$expectedValue'."
                 $status = "Actualizado"
             } else {
-                Set-AdvancedSetting -Entity $esxi -Name $key -Value $expectedValue -Confirm:$false
-                $status = "Actualizado"
+                Write-Host "Configuración '$key' en el host '$($esxi.Name)' ya es correcta."
+                $status = "Correcto"
             }
-            Write-Host "ALERTA: Configuración '$key' en el host '$($esxi.Name)' ha sido actualizada de '$currentValue' a '$expectedValue'."
         } else {
-            $status = "Correcto"
-            Write-Host "Configuración '$key' en el host '$($esxi.Name)' ya es correcta."
+            # La configuración no existe, crearla
+            New-AdvancedSetting -Entity $esxi -Name $key -Value $expectedValue -Confirm:$false
+            Write-Host "ALERTA: Configuración '$key' creada en el host '$($esxi.Name)' con valor '$expectedValue'."
+            $status = "Creado"
         }
 
         $resultado = @{
@@ -109,7 +100,7 @@ $html = @"
         th, td { border: 1px solid black; padding: 8px; text-align: left; }
         th { background-color: #F2F2F2; }
         .actualizado { background-color: #FFCCCB; } /* Rojo pastel */
-        .correcto { background-color: #B0F2C2; }  /* Verde pastel */
+        .correcto { background-color: #6AFAF0; }  /* Verde pastel */
     </style>
     <script>
         function filterTable() {
@@ -153,6 +144,7 @@ foreach ($resultado in $resultados) {
     switch ($resultado.Status) {
         "Actualizado" { $estadoClase = "actualizado" }
         "Correcto" { $estadoClase = "correcto" }
+        "Creado" { $estadoClase = "creado" }
     }
     $html += @"
         <tr class='$estadoClase'>
