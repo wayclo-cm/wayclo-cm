@@ -13,7 +13,7 @@ $vCenterServer = Read-Host "Ingrese la direcciÛn IP del servidor vCenter"
 $credential = Get-Credential -Message "Ingrese las credenciales para el servidor vCenter"
 
 # Solicitar el nombre del archivo de salida
-$outputFileName = Read-Host "Ingrese el nombre del archivo de salida (sin extensiÛn)"
+$outputFileName = Read-Host "Ingrese el nombre del archivo de salida (sin extension)"
 
 # Conectar a vCenter
 Connect-VIServer -Server $vCenterServer -Credential $credential
@@ -50,7 +50,7 @@ $settings = @{
 $esxiHosts = Get-VMHost
 
 # Hosts excluidos
-$excludedHosts = @("esxi80.management.pdm", "esxi81.management.pdm", "esxi82.management.pdm")
+$excludedHosts = @("ESXi1_Exclude", "ESXi2_Exclude", "ESXi3_Exclude")
 
 # Lista para almacenar los resultados
 $resultados = @()
@@ -74,10 +74,10 @@ foreach ($esxi in $esxiHosts) {
             $currentMode = (Get-View (Get-VMHost -Name $esxi.Name | Get-View).ConfigManager.HostAccessManager).LockdownMode
             if ($currentMode -ne 'lockdownNormal') {
                 (Get-View (Get-VMHost -Name $esxi.Name | Get-View).ConfigManager.HostAccessManager).ChangeLockdownMode('lockdownNormal')
-                Write-Host "ALERTA: ConfiguraciÛn 'LockdownMode' en el host '$($esxi.Name)' ha sido actualizada de '$currentMode' a 'lockdownNormal'."
+                Write-Host "ALERTA: Configuracion 'LockdownMode' en el host '$($esxi.Name)' ha sido actualizada de '$currentMode' a 'lockdownNormal'."
                 $status = "Actualizado"
             } else {
-                Write-Host "ConfiguraciÛn 'LockdownMode' en el host '$($esxi.Name)' ya es correcta."
+                Write-Host "Configuracion 'LockdownMode' en el host '$($esxi.Name)' ya es correcta."
                 $status = "Correcto"
             }
         } else {
@@ -117,7 +117,7 @@ foreach ($esxi in $esxiHosts) {
 $html = @"
 <html>
 <head>
-    <title>AplicaciÛn de Configuraciones Avanzadas de Hosts ESXi</title>
+    <title>Aplicacion de Configuraciones Avanzadas de Hosts ESXi</title>
     <style>
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid black; padding: 8px; text-align: left; }
@@ -153,7 +153,7 @@ $html = @"
     </script>
 </head>
 <body>
-    <h1 style="text-align:center;">AplicaciÛn de Configuraciones Avanzadas de Hosts ESXi</h1>
+    <h1 style="text-align:center;">Aplicacion de Configuraciones Avanzadas de Hosts ESXi</h1>
     <table id="resultsTable">
         <tr>
             <th>Host<br><input type="text" id="hostFilter" onkeyup="filterTable()"></th>
@@ -180,7 +180,7 @@ foreach ($resultado in $resultados) {
 }
 $html += @"
     </table>
-    <h2>Se excluyeron los siguientes hosts de la remediaciÛn:</h2>
+    <h2>Se excluyeron los siguientes hosts de la remediacion:</h2>
     <table>
         <tr>
             <th>Host</th>
@@ -206,4 +206,4 @@ $html | Out-File -FilePath $outputFilePath -Encoding UTF8
 Disconnect-VIServer -Server $vCenterServer -Confirm:$false
 
 # Informar al usuario la ubicaciÛn del archivo generado
-Write-Host "El archivo de aplicaciÛn ha sido guardado en $outputFilePath"
+Write-Host "El archivo de aplicacion ha sido guardado en $outputFilePath"
