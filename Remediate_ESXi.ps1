@@ -122,7 +122,7 @@ $html = @"
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid black; padding: 8px; text-align: left; }
         th { background-color: #F2F2F2; }
-        .actualizado { background-color: #FFCCCB; } /* Rojo pastel */
+        .actualizado { background-color: #7CDAF9; } /* Celeste pastel */
         .correcto { background-color: #B0F2C2; }  /* Verde pastel */
     </style>
     <script>
