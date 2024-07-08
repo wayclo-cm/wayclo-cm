@@ -2,18 +2,18 @@ Set-PowerCLIConfiguration -InvalidCertificateAction Ignore -Confirm:$false
 Set-PowerCLIConfiguration -Scope AllUsers -ParticipateInCEIP $false -Confirm:$false
 Set-ExecutionPolicy Unrestricted
 
-# Importar el módulo de VMware PowerCLI
+# Importar el mÛdulo de VMware PowerCLI
 Import-Module VMware.VimAutomation.Core -WarningAction SilentlyContinue
 Import-Module VMware.PowerCLI
 
-# Solicitar la dirección IP del servidor vCenter
-$vCenterServer = Read-Host "Ingrese la dirección IP del servidor vCenter"
+# Solicitar la direcciÛn IP del servidor vCenter
+$vCenterServer = Read-Host "Ingrese la direcciÛn IP del servidor vCenter"
 
 # Solicitar las credenciales de usuario
 $credential = Get-Credential -Message "Ingrese las credenciales para el servidor vCenter"
 
 # Solicitar el nombre del archivo de salida
-$outputFileName = Read-Host "Ingrese el nombre del archivo de salida (sin extensión)"
+$outputFileName = Read-Host "Ingrese el nombre del archivo de salida (sin extensiÛn)"
 
 # Conectar a vCenter
 Connect-VIServer -Server $vCenterServer -Credential $credential
@@ -49,34 +49,57 @@ $settings = @{
 # Obtener todos los hosts ESXi
 $esxiHosts = Get-VMHost
 
+# Hosts excluidos
+$excludedHosts = @("esxi80.management.pdm", "esxi81.management.pdm", "esxi82.management.pdm")
+
 # Lista para almacenar los resultados
 $resultados = @()
+$excluidos = @()
 
 # Aplicar las configuraciones avanzadas en cada host ESXi
 foreach ($esxi in $esxiHosts) {
+    if ($excludedHosts -contains $esxi.Name) {
+        Write-Host "Excluyendo el host '$($esxi.Name)' de las configuraciones..."
+        $excluidos += $esxi.Name
+        continue
+    }
+
     Write-Host "Aplicando configuraciones en el host '$($esxi.Name)'..."
 
     foreach ($key in $settings.Keys) {
         $expectedValue = $settings[$key]
 
-        # Obtener el valor actual del setting
-        $currentSetting = Get-AdvancedSetting -Entity $esxi -Name $key -ErrorAction SilentlyContinue
-
-        if ($currentSetting) {
-            # La configuración ya existe, actualizar si es necesario
-            if ($currentSetting.Value -ne $expectedValue) {
-                Set-AdvancedSetting -AdvancedSetting $currentSetting -Value $expectedValue -Confirm:$false
-                Write-Host "ALERTA: Configuración '$key' en el host '$($esxi.Name)' ha sido actualizada de '$($currentSetting.Value)' a '$expectedValue'."
+        if ($key -eq "ConfigManager.HostAccessManager.LockdownMode") {
+            # Configurar LockdownMode usando el comando especÌfico
+            $currentMode = (Get-View (Get-VMHost -Name $esxi.Name | Get-View).ConfigManager.HostAccessManager).LockdownMode
+            if ($currentMode -ne 'lockdownNormal') {
+                (Get-View (Get-VMHost -Name $esxi.Name | Get-View).ConfigManager.HostAccessManager).ChangeLockdownMode('lockdownNormal')
+                Write-Host "ALERTA: ConfiguraciÛn 'LockdownMode' en el host '$($esxi.Name)' ha sido actualizada de '$currentMode' a 'lockdownNormal'."
                 $status = "Actualizado"
             } else {
-                Write-Host "Configuración '$key' en el host '$($esxi.Name)' ya es correcta."
+                Write-Host "ConfiguraciÛn 'LockdownMode' en el host '$($esxi.Name)' ya es correcta."
                 $status = "Correcto"
             }
         } else {
-            # La configuración no existe, crearla
-            New-AdvancedSetting -Entity $esxi -Name $key -Value $expectedValue -Confirm:$false
-            Write-Host "ALERTA: Configuración '$key' creada en el host '$($esxi.Name)' con valor '$expectedValue'."
-            $status = "Creado"
+            # Obtener el valor actual del setting
+            $currentSetting = Get-AdvancedSetting -Entity $esxi -Name $key -ErrorAction SilentlyContinue
+
+            if ($currentSetting) {
+                # La configuraciÛn ya existe, actualizar si es necesario
+                if ($currentSetting.Value -ne $expectedValue) {
+                    Set-AdvancedSetting -AdvancedSetting $currentSetting -Value $expectedValue -Confirm:$false
+                    Write-Host "ALERTA: ConfiguraciÛn '$key' en el host '$($esxi.Name)' ha sido actualizada de '$($currentSetting.Value)' a '$expectedValue'."
+                    $status = "Actualizado"
+                } else {
+                    Write-Host "ConfiguraciÛn '$key' en el host '$($esxi.Name)' ya es correcta."
+                    $status = "Correcto"
+                }
+            } else {
+                # La configuraciÛn no existe, crearla
+                New-AdvancedSetting -Entity $esxi -Name $key -Value $expectedValue -Confirm:$false
+                Write-Host "ALERTA: ConfiguraciÛn '$key' creada en el host '$($esxi.Name)' con valor '$expectedValue'."
+                $status = "Creado"
+            }
         }
 
         $resultado = @{
@@ -94,13 +117,13 @@ foreach ($esxi in $esxiHosts) {
 $html = @"
 <html>
 <head>
-    <title>Aplicación de Configuraciones Avanzadas de Hosts ESXi</title>
+    <title>AplicaciÛn de Configuraciones Avanzadas de Hosts ESXi</title>
     <style>
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid black; padding: 8px; text-align: left; }
         th { background-color: #F2F2F2; }
         .actualizado { background-color: #FFCCCB; } /* Rojo pastel */
-        .correcto { background-color: #6AFAF0; }  /* Verde pastel */
+        .correcto { background-color: #B0F2C2; }  /* Verde pastel */
     </style>
     <script>
         function filterTable() {
@@ -130,11 +153,11 @@ $html = @"
     </script>
 </head>
 <body>
-    <h1 style="text-align:center;">Aplicación de Configuraciones Avanzadas de Hosts ESXi</h1>
+    <h1 style="text-align:center;">AplicaciÛn de Configuraciones Avanzadas de Hosts ESXi</h1>
     <table id="resultsTable">
         <tr>
             <th>Host<br><input type="text" id="hostFilter" onkeyup="filterTable()"></th>
-            <th>Configuración<br><input type="text" id="settingFilter" onkeyup="filterTable()"></th>
+            <th>ConfiguraciÛn<br><input type="text" id="settingFilter" onkeyup="filterTable()"></th>
             <th>Valor Esperado</th>
             <th>Estado<br><input type="text" id="statusFilter" onkeyup="filterTable()"></th>
         </tr>
@@ -157,6 +180,21 @@ foreach ($resultado in $resultados) {
 }
 $html += @"
     </table>
+    <h2>Se excluyeron los siguientes hosts de la remediaciÛn:</h2>
+    <table>
+        <tr>
+            <th>Host</th>
+        </tr>
+"@
+foreach ($excluido in $excluidos) {
+    $html += @"
+        <tr>
+            <td>$excluido</td>
+        </tr>
+"@
+}
+$html += @"
+    </table>
 </body>
 </html>
 "@
@@ -167,5 +205,5 @@ $html | Out-File -FilePath $outputFilePath -Encoding UTF8
 # Desconectar de vCenter
 Disconnect-VIServer -Server $vCenterServer -Confirm:$false
 
-# Informar al usuario la ubicación del archivo generado
-Write-Host "El archivo de aplicación ha sido guardado en $outputFilePath"
+# Informar al usuario la ubicaciÛn del archivo generado
+Write-Host "El archivo de aplicaciÛn ha sido guardado en $outputFilePath"
