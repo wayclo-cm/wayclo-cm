@@ -28,14 +28,24 @@ $settings = @{
     "tools.guest.desktop.autolock" = $true;
 }
 
+# VMs excluidas
+$excludedVMs = @("VM_Exclude1", "VM_Exclude2")
+
 # Obtener todas las VMs
 $vms = Get-VM
 
 # Lista para almacenar los resultados
 $resultados = @()
+$excluidos = @()
 
 # Aplicar las configuraciones avanzadas en cada VM
 foreach ($vm in $vms) {
+    if ($excludedVMs -contains $vm.Name) {
+        Write-Host "Excluyendo la VM '$($vm.Name)' de las configuraciones..."
+        $excluidos += $vm.Name
+        continue
+    }
+
     Write-Host "Verificando configuraciones en la VM '$($vm.Name)'..."
 
     foreach ($key in $settings.Keys) {
@@ -90,7 +100,7 @@ $html = @"
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid black; padding: 8px; text-align: left; }
         th { background-color: #F2F2F2; }
-        .actualizado { background-color: #FFCCCB; } /* Rojo pastel */
+        .actualizado { background-color: #7CDAF9; } /* Rojo pastel */
         .correcto { background-color: #B0F2C2; }  /* Verde pastel */
         .creado { background-color: #FFF3CD; } /* Amarillo pastel */
     </style>
@@ -144,6 +154,21 @@ foreach ($resultado in $resultados) {
             <td>$($resultado.Setting)</td>
             <td>$($resultado.ExpectedValue)</td>
             <td>$($resultado.Status)</td>
+        </tr>
+"@
+}
+$html += @"
+    </table>
+    <h2>Se excluyeron las siguientes VMs de la remediación:</h2>
+    <table>
+        <tr>
+            <th>VM</th>
+        </tr>
+"@
+foreach ($excluido in $excluidos) {
+    $html += @"
+        <tr>
+            <td>$excluido</td>
         </tr>
 "@
 }
